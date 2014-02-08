@@ -1,16 +1,16 @@
 /**
  * An Ember.js component for displaying a spinning loading indicator using spin.js.
- * 
+ *
  * Implementation is Eric Berry's (@cavneb), and I've just created the bower module.
- * 
+ *
  * You must nclude this file after you define your `App = Ember.Application.create()`.
  * See [this discussion](http://discuss.emberjs.com/t/combining-component-logic-and-template-together-in-single-file/2879/10)
  * for a discussion of ways to improve this.
- * 
+ *
  * @see http://fgnass.github.io/spin.js/ for usage info
  */
 App.XSpinnerComponent = Ember.Component.extend({
-  
+
   lines    : 12, // The number of lines to draw
   length   : 6, // The length of each line
   width    : 2, // The line thickness
@@ -27,8 +27,22 @@ App.XSpinnerComponent = Ember.Component.extend({
   zIndex   : 2e9, // The z-index (defaults to 2000000000)
   top      : 'auto', // Top position relative to parent in px
   left     : 'auto', // Left position relative to parent in px
+  delay    : 0, // Delay in ms for showing the spinner
 
-  showSpinner: function() {
+  inserted: function() {
+    if (this.get('delay')) {
+      this._delaySpinner();
+    } else {
+      this._showSpinner();
+    }
+  }.on('didInsertElement'),
+
+  teardown: function() {
+    clearTimeout(this.timeoutId);
+    if (this.spinner) this.spinner.stop();
+  }.on('willDestroyElement'),
+
+  _showSpinner: function() {
     var target = this.get('element');
     this.spinner = new Spinner({
         lines    : this.get('lines'),
@@ -49,11 +63,14 @@ App.XSpinnerComponent = Ember.Component.extend({
         left     : this.get('left')
     });
     this.spinner.spin(target);
-  }.on('didInsertElement'),
-  
-  teardown: function() {
-    this.spinner.stop();
-  }.on('willDestroyElement')
-    
+  },
+
+  _delaySpinner: function() {
+    var _this = this;
+    this.timeoutId = setTimeout(function() {
+      _this._showSpinner();
+    }, this.get('delay'));
+  }
+
 });
 Ember.Handlebars.helper('x-spinner', App.XSpinnerComponent);
